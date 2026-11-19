@@ -1,30 +1,36 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#15191b">
-  <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="./style.css">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#18272b">
   <title>Neon Coast Cover Studio</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="src/cover.js"></script>
+  <script defer src="src/shots.js"></script>
+  <script defer src="src/main.js"></script>
 </head>
 <body>
-  <header class="masthead"><a class="identity" href="./index.html"><b class="monogram">NC<span>↗</span></b><span>NEON COAST<small>COVER STUDIO / VOL. 01</small></span></a><div class="mast-note">YOUR LIFE. THE COVER STORY.</div><span class="offline"><i></i> OFFLINE & PRIVATE</span></header>
-  <div class="workspace">
-    <aside class="tools">
-      <div class="intro"><span class="eyebrow">FROM CAMERA ROLL TO CULT CLASSIC</span><h1>Make your<br>own getaway.</h1><p>A little sunset. A little trouble. All you.</p></div>
-      <section><h2><span>01</span> Set the scene</h2><label for="layout">COMPOSITION</label><select id="layout"><option value="hero">Hero — one lead, three details</option><option value="grid">Grid — four sides to the story</option><option value="single">Single — full focus</option><option value="strip">Strip — scattered memories</option></select>
-      <div class="samples"><button data-sample="pier">↗ Pier escape</button><button data-sample="boulevard">↗ Boulevard</button></div>
-      <div id="panels" class="panel-picker" aria-label="Select panel"></div>
-      <div class="photo-actions"><button id="upload">＋ Add photo</button><label class="check"><input id="fill" type="checkbox" checked> To all panels</label></div><input id="photo" type="file" accept="image/*" hidden>
-      <div class="zoom-row"><label for="zoom">PANEL ZOOM</label><input id="zoom" type="range" min="1" max="4" step="0.01" value="1"><button id="reset" title="Reset selected crop">↺</button></div><p class="hint">Select a frame, then drag the photo to compose.</p></section>
-      <section><h2><span>02</span> Chase the light</h2><div class="grades" role="group" aria-label="Color grade"><button data-grade="vice" class="chosen"><i></i>Vice</button><button data-grade="neon"><i></i>Neon</button><button data-grade="gold"><i></i>Gold</button><button data-grade="mono"><i></i>Noir</button></div></section>
-      <section><h2><span>03</span> Write the legend</h2><label for="caption">COVER TITLE</label><input id="caption" maxlength="40" value="Sunset Heist"><label for="subtitle">SUBTITLE</label><input id="subtitle" maxlength="64" value="No plans. No alibis."></section>
-      <section class="output"><label for="size">EXPORT FORMAT</label><select id="size"><option value="1080x1080">Square · 1080 × 1080</option><option value="1080x1350">Portrait · 1080 × 1350</option><option value="1920x1080">Wide · 1920 × 1080</option></select><button id="download" class="primary">Download PNG <span>↗</span></button><p id="status" role="status">Loading your coastal escape…</p></section>
+  <header class="topline"><a href="index.html" class="brand"><span class="brand-symbol">N/C</span><span>NEON COAST<small>INDEPENDENT COVER STUDIO</small></span></a><span class="edition">GOOD PHOTOS. BAD INTENTIONS. / VOL. 01</span><span class="privacy">● LOCAL ONLY</span></header>
+  <div class="studio">
+    <aside class="desk" aria-label="Cover controls">
+      <div class="welcome"><span class="overline">A POSTCARD FROM THE OTHER SIDE</span><h1>Your next<br>cover story.</h1><p>Camera roll in. Coastal legend out.</p></div>
+      <section><h2><em>01</em> Choose your angle</h2>
+        <label for="layout">LAYOUT</label><select id="layout"><option value="hero">Hero / one lead + three details</option><option value="grid">Grid / four chapters</option><option value="single">Single / the whole picture</option><option value="strip">Strip / tilted snapshots</option></select>
+        <div class="sample-row"><button data-photo="pier">Pier escape ↗</button><button data-photo="boulevard">Boulevard ↗</button></div>
+        <div id="panel-list" class="panel-list" role="group" aria-label="Choose a photo panel"></div>
+        <div class="upload-row"><button id="choose-photo">＋ Load photo</button><label class="inline"><input type="checkbox" id="all-panels" checked> To all panels</label></div>
+        <input type="file" id="photo-file" accept="image/*" hidden>
+        <div class="crop-row"><label for="zoom">ZOOM</label><input type="range" id="zoom" min="1" max="4" step="0.01" value="1"><button id="reset-crop" aria-label="Reset selected crop">↺</button></div>
+        <p class="tip">Pick a panel. Drag to frame. Arrow keys work too.</p>
+      </section>
+      <section><h2><em>02</em> Set the atmosphere</h2><div class="grade-list" role="group" aria-label="Color grade"><button data-look="vice" aria-pressed="true"><i></i>Vice sunset</button><button data-look="neon" aria-pressed="false"><i></i>Neon</button><button data-look="gold" aria-pressed="false"><i></i>Gold</button><button data-look="mono" aria-pressed="false"><i></i>Noir</button></div></section>
+      <section><h2><em>03</em> Make a name</h2><label for="caption">CAPTION</label><input id="caption" type="text" maxlength="40" value="Sunset Heist"><label for="subtitle">SUBTITLE</label><input id="subtitle" type="text" maxlength="64" value="No plans. No alibis."></section>
+      <section class="export"><label for="size">PNG EXPORT SIZE</label><select id="size"><option value="1080x1080">Square — 1080 × 1080</option><option value="1080x1350">Portrait — 1080 × 1350</option><option value="1920x1080">Wide — 1920 × 1080</option></select><button id="save" class="save" disabled>Download cover <span>↗</span></button><p id="status" role="status" aria-live="polite">Preparing the studio…</p></section>
     </aside>
-    <main class="stage"><div class="stage-bar"><span><i></i> THE PREVIEW</span><span id="dimensions">1080 × 1080</span></div><div class="artboard"><canvas id="art" width="1080" height="1080" aria-label="Cover preview; drag any panel to reframe its photo" tabindex="0"></canvas></div><div class="stage-bottom"><span>ORIGINAL MOMENTS. CINEMATIC ENERGY.</span><span>✳ MADE ON THE COAST</span></div></main>
+    <main class="preview"><div class="preview-heading"><span>● LIVE PRESS PROOF</span><span id="resolution">1080 × 1080</span></div><div class="canvas-area"><canvas id="cover" width="1080" height="1080" tabindex="0" aria-label="Your cover. Select and drag a photo panel to adjust the crop."></canvas></div><footer><span>YOUR PHOTOS NEVER LEAVE THIS DEVICE</span><span>PRINT SOME TROUBLE ↗</span></footer></main>
   </div>
-  <noscript>This studio needs JavaScript enabled. Everything runs on this device.</noscript>
-  <script src="./src/cover.js" defer></script><script src="./src/shots.js" defer></script><script src="./src/main.js" defer></script>
+  <noscript>Enable JavaScript to compose and download your cover. No internet connection is needed.</noscript>
 </body>
 </html>

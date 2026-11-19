@@ -1,63 +1,97 @@
-/* Local canvas compositor; preview and downloaded PNG use this same painter. */
-window.CoastArt = (() => {
-  const palettes = {
-    vice: ['#ffbf78', '#ec5794', '#321744'],
-    neon: ['#70f5d0', '#f54ca1', '#101f48'],
-    gold: ['#ffe1a0', '#e79d4b', '#243d51'],
-    mono: ['#f1ece2', '#a9b9bc', '#171c29']
+/* One compositor drives both the working proof and the full-resolution PNG. */
+window.NeonCover = (() => {
+  const inks = {
+    vice: { light: '#ffd799', hot: '#f174a8', dark: '#271a3e', filter: 'saturate(1.25) contrast(1.12)' },
+    neon: { light: '#a0ffe0', hot: '#f26ab7', dark: '#172648', filter: 'saturate(1.5) contrast(1.16)' },
+    gold: { light: '#ffe5a7', hot: '#e9a256', dark: '#273c42', filter: 'sepia(.25) saturate(1.15) contrast(1.1)' },
+    mono: { light: '#f4eadd', hot: '#bacbca', dark: '#1c2931', filter: 'grayscale(1) contrast(1.25)' }
   };
-  function frames(kind, width, height) {
-    const gutter = Math.min(width, height) * .012, top = height * .745;
-    let boxes;
-    if (kind === 'single') boxes = [[0, 0, 1, 1]];
-    else if (kind === 'grid') boxes = [[0,0,.5,.5],[.5,0,.5,.5],[0,.5,.5,.5],[.5,.5,.5,.5]];
-    else if (kind === 'strip') boxes = [[.045,.06,.57,.79,-.065],[.52,.04,.43,.52,.08],[.47,.51,.47,.45,-.045]];
-    else boxes = [[0,0,.67,1],[.67,0,.33,.34],[.67,.34,.33,.33],[.67,.67,.33,.33]];
-    return boxes.map(([x,y,w,h,angle=0], index) => ({index, x:x*width+gutter, y:y*top+gutter, w:w*width-gutter*2, h:h*top-gutter*2, angle}));
+  function geometry(layout, width, height) {
+    let placements;
+    switch (layout) {
+      case 'single': placements = [[0, 0, 1, 1]]; break;
+      case 'grid': placements = [[0, 0, .5, .5], [.5, 0, .5, .5], [0, .5, .5, .5], [.5, .5, .5, .5]]; break;
+      case 'strip': placements = [[.04, .06, .57, .86, -.055], [.57, .045, .38, .49, .07], [.54, .56, .42, .4, -.04]]; break;
+      default: placements = [[0, 0, .675, 1], [.675, 0, .325, .335], [.675, .335, .325, .33], [.675, .665, .325, .335]];
+    }
+    const gap = Math.min(width, height) * .009;
+    return placements.map((p, id) => ({ id, x: p[0] * width + gap, y: p[1] * height * .745 + gap,
+      width: p[2] * width - gap * 2, height: p[3] * height * .745 - gap * 2, angle: p[4] || 0 }));
   }
-  function photograph(ctx, rect, panel, grade) {
-    const {x,y,w,h,angle}=rect;
-    ctx.save(); ctx.translate(x+w/2,y+h/2); ctx.rotate(angle);
-    if(angle){ctx.fillStyle='#f2dec0';ctx.fillRect(-w/2-7,-h/2-7,w+14,h+14);}
-    ctx.beginPath();ctx.rect(-w/2,-h/2,w,h);ctx.clip();
-    const image=panel.image;
-    const scale=Math.max(w/image.naturalWidth,h/image.naturalHeight)*panel.zoom;
-    const dw=image.naturalWidth*scale,dh=image.naturalHeight*scale;
-    ctx.filter=grade==='mono'?'grayscale(1) contrast(1.2)':'saturate(1.25) contrast(1.14)';
-    ctx.drawImage(image,-dw/2+(dw-w)*panel.x/2,-dh/2+(dh-h)*panel.y/2,dw,dh);ctx.filter='none';
-    const colors=palettes[grade];
-    const wash=ctx.createLinearGradient(0,-h/2,0,h/2);wash.addColorStop(0,colors[0]);wash.addColorStop(1,colors[1]);
-    ctx.globalCompositeOperation='soft-light';ctx.globalAlpha=.45;ctx.fillStyle=wash;ctx.fillRect(-w/2,-h/2,w,h);
-    ctx.globalCompositeOperation='multiply';ctx.globalAlpha=.18;ctx.fillStyle=colors[2];ctx.fillRect(-w/2,-h/2,w,h);
-    ctx.restore();
+  function imageMetrics(frame, crop) {
+    const factor = Math.max(frame.width / crop.image.naturalWidth, frame.height / crop.image.naturalHeight) * crop.zoom;
+    return { width: crop.image.naturalWidth * factor, height: crop.image.naturalHeight * factor };
   }
-  function render(canvas, model) {
-    const c=canvas.getContext('2d'),w=canvas.width,h=canvas.height,m=Math.min(w,h),colors=palettes[model.grade]||palettes.vice;
-    c.fillStyle='#15151e';c.fillRect(0,0,w,h);
-    const regions=frames(model.layout,w,h);
-    regions.forEach(r=>photograph(c,r,model.panels[r.index],model.grade));
-    c.textBaseline='top';
-    regions.forEach((r,i)=>{c.fillStyle='#161521b0';c.fillRect(r.x+12,r.y+12,m*.09,m*.026);c.fillStyle='#fff0d4';c.font='700 '+m*.011+'px Arial';c.fillText('SCENE / 0'+(i+1),r.x+18,r.y+17);});
-    const y=h*.745;
-    const band=c.createLinearGradient(0,y,w,h);band.addColorStop(0,'#241b32');band.addColorStop(1,'#121b27');c.fillStyle=band;c.fillRect(0,y,w,h-y);
-    c.save();c.beginPath();c.rect(0,y,w,h-y);c.clip();
-    c.fillStyle=colors[1];c.globalAlpha=.25;
-    const dot=m*.008;
-    for(let row=0;row<(h-y)/dot;row++)for(let col=0;col<w/dot;col++){c.beginPath();c.arc(col*dot+(row%2)*dot/2,y+row*dot,dot*.15,0,Math.PI*2);c.fill();}
-    c.restore();
-    c.fillStyle=colors[1];c.fillRect(m*.025,y+m*.024,m*.055,m*.005);
-    c.font='700 '+m*.012+'px Arial';c.fillStyle=colors[0];c.fillText('NEON COAST  /  AN ORIGINAL STORY',m*.095,y+m*.019);
-    const title=(model.caption.trim()||'UNTITLED ESCAPE').toUpperCase();
-    let font=h*.14;
-    const type=()=> '900 '+font+'px Impact, "Arial Narrow", "Liberation Sans Narrow", sans-serif';
-    c.font=type();while(c.measureText(title).width>w*.91&&font>12){font-=1;c.font=type();}
-    c.textBaseline='alphabetic';c.lineJoin='round';c.lineWidth=m*.006;c.strokeStyle='#100f1c';
-    const letter=c.createLinearGradient(0,y,0,h);letter.addColorStop(0,'#fff5d4');letter.addColorStop(.6,colors[0]);letter.addColorStop(1,colors[1]);
-    c.fillStyle='#060b13';c.fillText(title,m*.03+4,y+h*.145+5,w*.94);c.fillStyle=letter;c.strokeText(title,m*.03,y+h*.145,w*.94);c.fillText(title,m*.03,y+h*.145,w*.94);
-    c.font='italic 600 '+m*.024+'px Georgia,serif';c.fillStyle=colors[1];c.fillText(model.subtitle,m*.035,h-m*.039,w*.77);
-    c.textAlign='right';c.font='700 '+m*.01+'px Arial';c.fillStyle='#b6b4b0';c.fillText('AFTER DARK / VOL. 01',w-m*.03,h-m*.025);c.textAlign='left';
-    c.strokeStyle='#f7d6a4';c.lineWidth=m*.004;c.strokeRect(m*.003,m*.003,w-m*.006,h-m*.006);
-    return regions;
+  function paintPhoto(context, frame, crop, ink, unit) {
+    const { width: w, height: h } = frame;
+    context.save();
+    context.translate(frame.x + w / 2, frame.y + h / 2);
+    context.rotate(frame.angle);
+    context.fillStyle = '#f4dfbc';
+    if (frame.angle) context.fillRect(-w / 2 - unit * .006, -h / 2 - unit * .006, w + unit * .012, h + unit * .012);
+    context.beginPath(); context.rect(-w / 2, -h / 2, w, h); context.clip();
+    if (crop && crop.image) {
+      const image = imageMetrics(frame, crop);
+      context.filter = ink.filter;
+      context.drawImage(crop.image, -image.width / 2 + crop.x * (image.width - w) / 2,
+        -image.height / 2 + crop.y * (image.height - h) / 2, image.width, image.height);
+      context.filter = 'none';
+    }
+    const wash = context.createLinearGradient(0, -h / 2, 0, h / 2);
+    wash.addColorStop(0, ink.light); wash.addColorStop(.6, ink.hot); wash.addColorStop(1, ink.dark);
+    context.globalCompositeOperation = 'soft-light'; context.globalAlpha = .53;
+    context.fillStyle = wash; context.fillRect(-w / 2, -h / 2, w, h);
+    context.globalCompositeOperation = 'source-over'; context.globalAlpha = 1;
+    const shade = context.createLinearGradient(0, 0, 0, h / 2);
+    shade.addColorStop(0, '#10172200'); shade.addColorStop(1, '#1017226b');
+    context.fillStyle = shade; context.fillRect(-w / 2, -h / 2, w, h);
+    context.fillStyle = '#152429b3'; context.fillRect(-w / 2 + unit * .012, -h / 2 + unit * .012, unit * .105, unit * .027);
+    context.font = `700 ${unit * .011}px Arial, sans-serif`; context.textBaseline = 'middle'; context.fillStyle = '#ffead0';
+    context.fillText(`CHAPTER / 0${frame.id + 1}`, -w / 2 + unit * .018, -h / 2 + unit * .026);
+    context.restore();
   }
-  return {frames,render};
+  function render(canvas, project) {
+    const context = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height, unit = Math.min(w, h), titleTop = h * .745;
+    const ink = inks[project.grade] || inks.vice;
+    context.clearRect(0, 0, w, h); context.fillStyle = '#142129'; context.fillRect(0, 0, w, h);
+    const frames = geometry(project.layout, w, h);
+    frames.forEach(frame => paintPhoto(context, frame, project.panels[frame.id], ink, unit));
+    context.save(); context.beginPath(); context.rect(0, titleTop, w, h - titleTop); context.clip();
+    const paper = context.createLinearGradient(0, titleTop, w, h);
+    paper.addColorStop(0, ink.dark); paper.addColorStop(1, '#101f29');
+    context.fillStyle = paper; context.fillRect(0, titleTop, w, h - titleTop);
+    const pitch = unit * .009;
+    context.fillStyle = ink.hot; context.globalAlpha = .22;
+    for (let row = 0; row * pitch < h - titleTop; row++) {
+      for (let x = (row % 2) * pitch / 2; x < w; x += pitch) {
+        context.beginPath(); context.arc(x, titleTop + row * pitch, pitch * .17, 0, 2 * Math.PI); context.fill();
+      }
+    }
+    context.globalAlpha = 1;
+    context.fillStyle = ink.hot; context.fillRect(unit * .032, titleTop + h * .025, unit * .052, unit * .005);
+    context.fillStyle = ink.light; context.font = `700 ${unit * .012}px Arial, sans-serif`; context.textBaseline = 'middle';
+    context.fillText('NEON COAST  /  AN INDEPENDENT COVER STORY', unit * .1, titleTop + h * .028);
+    const headline = (project.caption.trim() || 'UNTITLED ESCAPE').toLocaleUpperCase('en-US');
+    let fontSize = h * .14;
+    const setFont = () => { context.font = `900 ${fontSize}px Impact, Haettenschweiler, "Arial Narrow", "Liberation Sans Narrow", sans-serif`; };
+    setFont();
+    while (context.measureText(headline).width > w * .935 && fontSize > 12) { fontSize -= 1; setFont(); }
+    const baseline = titleTop + h * .153;
+    const titleInk = context.createLinearGradient(0, baseline - fontSize, 0, baseline);
+    titleInk.addColorStop(0, '#fff3d3'); titleInk.addColorStop(.55, ink.light); titleInk.addColorStop(1, ink.hot);
+    context.textBaseline = 'alphabetic'; context.lineJoin = 'round'; context.lineWidth = unit * .007;
+    context.strokeStyle = '#0b1420'; context.fillStyle = '#080f18';
+    context.fillText(headline, unit * .032 + unit * .005, baseline + unit * .006);
+    context.strokeText(headline, unit * .032, baseline); context.fillStyle = titleInk; context.fillText(headline, unit * .032, baseline);
+    context.font = `italic 600 ${unit * .024}px Georgia, serif`; context.fillStyle = ink.hot;
+    context.fillText(project.subtitle, unit * .035, h - h * .04, w * .76);
+    context.textAlign = 'right'; context.fillStyle = '#b9c7c1'; context.font = `700 ${unit * .01}px Arial, sans-serif`;
+    context.fillText('AFTER HOURS / 01', w - unit * .03, h - h * .022);
+    context.restore();
+    context.strokeStyle = '#f2d8af'; context.lineWidth = unit * .004;
+    context.strokeRect(unit * .003, unit * .003, w - unit * .006, h - unit * .006);
+    return frames;
+  }
+  return { render, geometry, imageMetrics };
 })();

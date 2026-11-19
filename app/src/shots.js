@@ -1,17 +1,24 @@
-window.CoastShot = async function(prepare) {
-  const query=new URLSearchParams(location.search);
-  const mode=query.get('shot');
-  window.__shotReady=false;
-  if(mode==='cover') document.body.classList.add('shot-cover');
-  const allow=(key,values,fallback)=>values.includes(query.get(key))?query.get(key):fallback;
-  await prepare({
-    photo:allow('photo',['pier','boulevard'],'pier'),
-    layout:allow('layout',['hero','grid','single','strip'],'hero'),
-    size:allow('size',['1080x1080','1080x1350','1920x1080'],'1080x1080'),
-    caption:query.get('caption')?.slice(0,40)||'Sunset Heist',
-    subtitle:query.get('subtitle')?.slice(0,64)||'No plans. No alibis.'
-  });
-  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-  window.__shotReady=true;
-  document.documentElement.dataset.ready='true';
+/* Capture consumers wait for __shotReady; no capture or image generation occurs here. */
+window.NeonScene = {
+  read() {
+    window.__shotReady = false;
+    const parameters = new URLSearchParams(window.location.search);
+    const mode = parameters.get('shot');
+    if (mode !== 'cover' && mode !== 'editor') return null;
+    const pick = (key, choices, fallback) => choices.includes(parameters.get(key)) ? parameters.get(key) : fallback;
+    document.body.classList.toggle('cover-only', mode === 'cover');
+    return {
+      photo: pick('photo', ['pier', 'boulevard'], 'pier'),
+      layout: pick('layout', ['hero', 'grid', 'single', 'strip'], 'hero'),
+      size: pick('size', ['1080x1080', '1080x1350', '1920x1080'], '1080x1080'),
+      caption: (parameters.get('caption') || 'Sunset Heist').slice(0, 40),
+      subtitle: (parameters.get('subtitle') || 'No plans. No alibis.').slice(0, 64)
+    };
+  },
+  async complete() {
+    await document.fonts.ready;
+    await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+    window.__shotReady = true;
+    document.documentElement.dataset.ready = 'true';
+  }
 };
