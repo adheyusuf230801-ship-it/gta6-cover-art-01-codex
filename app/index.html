@@ -3,21 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cover Snap</title>
+<meta name="theme-color" content="#100d1d">
+<title>Neon Coast Cover Studio</title>
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<main class="app">
-  <section class="controls">
-    <h1>Cover Snap</h1>
-    <p>A photo and a caption, made into a square cover.</p>
-    <label>Photo <input id="photo" type="file" accept="image/*"></label>
-    <label>Caption <input id="caption" type="text" maxlength="40" value="Sunset Heist"></label>
-    <button id="export" type="button">Export PNG 1080 x 1080</button>
-    <p id="status" role="status"></p>
-  </section>
-  <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
-</main>
+<div class="studio-shell">
+  <aside class="controls" aria-label="Cover controls">
+    <header class="brand"><span class="brand-mark">NC</span><div><p class="eyebrow">AFTER DARK / 01</p><h1>Neon Coast <span>Cover Studio</span></h1></div></header>
+    <p class="intro">Build a frame-worthy night on the coast. Your photos stay right here on this device.</p>
+    <section class="control-section"><h2><span>01</span> Composition</h2>
+      <label class="field-label" for="layout">Layout</label><select id="layout"><option value="hero">Hero / four-panel poster</option><option value="grid">Four square panels</option><option value="single">Full-bleed photo</option><option value="strip">Tilted snapshot strip</option></select>
+      <div id="panel-list" class="panel-list" aria-label="Panel photo controls"></div>
+      <button id="fill-all" class="button-secondary" type="button">＋ Fill all panels with one photo</button>
+      <input id="fill-file" type="file" accept="image/*" hidden>
+      <p id="drag-hint" class="helper">Select a panel, then drag the art to reframe it.</p>
+    </section>
+    <section class="control-section"><h2><span>02</span> Color grade</h2><label class="field-label" for="grade">Palette</label><select id="grade"><option value="vice">Vice Sunset · orange / pink</option><option value="neon">Neon Night · pink / teal</option><option value="gold">Golden Hour · honey / blue</option><option value="mono">Mono Noir · silver / ink</option></select></section>
+    <section class="control-section lettering"><h2><span>03</span> Lettering</h2><label class="field-label" for="caption">Cover title</label><input id="caption" maxlength="32" value="SUNSET HEIST" autocomplete="off"><label class="field-label" for="subtitle">Neon subtitle</label><input id="subtitle" maxlength="48" value="THE NIGHT IS OURS" autocomplete="off"></section>
+    <section class="control-section export-section"><h2><span>04</span> Output</h2><label class="field-label" for="size">Canvas size</label><select id="size"><option value="1080x1080">Square · 1080 × 1080</option><option value="1080x1350">Portrait · 1080 × 1350</option><option value="1920x1080">Landscape · 1920 × 1080</option></select><button id="export" class="button-primary" type="button"><span>Export cover</span><span>↗</span></button><p id="status" role="status" aria-live="polite">Studio ready · choose a frame</p></section>
+    <footer><span>NEON COAST / PERSONAL EDITION</span><span>01 — 04</span></footer>
+  </aside>
+  <main class="preview-area" aria-label="Cover preview"><div class="preview-top"><span><i></i> LIVE CANVAS</span><span id="preview-size">1080 × 1080</span></div><div class="canvas-wrap"><canvas id="cover" width="1080" height="1080" tabindex="0" aria-label="Live preview of your cover artwork">Your browser does not support the cover preview canvas.</canvas></div><div class="preview-foot"><span>DRAG PHOTO TO REFRAME</span><span>MADE FROM YOUR MOMENTS ✳</span></div></main>
+</div>
+<noscript><p class="noscript-note">Enable JavaScript to build your cover in this offline studio.</p></noscript>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>
